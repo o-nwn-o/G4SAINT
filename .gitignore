@@ -1,0 +1,27 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Model weights
+*.pt
+*.ckpt
+
+# Data files
+*.npy
+*.csv
+*.xlsx
+
+# ESM models
+code/esm2_*
+
+# Model directory
+code/model/*
+!code/model/README.md
+
+# Data directory
+data/*
+!data/README.md
+
+# System files
+.DS_Store
+
