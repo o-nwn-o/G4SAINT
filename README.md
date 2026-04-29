@@ -104,3 +104,19 @@ If downloaded manually, place the weights under:
 code/esm2_t33_650M_UR50D/
 ```
 
+---
+
+### InterProScan
+
+We used InterProScan version:
+
+- Version: interproscan-5.75-106.0
+
+Download from:
+
+https://www.ebi.ac.uk/interpro/interproscan.html
+
+Example:
+
+```bash
+interproscan.sh -i input.fasta -f tsv -appl Pfam -o interpro.tsv

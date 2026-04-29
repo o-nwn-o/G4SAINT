@@ -2,7 +2,7 @@
 
 We used InterProScan version:
 
-interproscan-5.75-106.0
+- Version: interproscan-5.75-106.0
 
 Download from:
 
