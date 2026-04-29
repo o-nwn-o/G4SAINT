@@ -20,7 +20,6 @@ from sklearn.isotonic import IsotonicRegression
 from interpro import InterProData
 
 os.chdir(os.path.expanduser("~"))
-selected_indices = np.load("code/selected_feature_indices.npy")
 with open("data/uniprotkb_index_mapping.json", 'r') as f:
     index_mapping = json.load(f)
 
@@ -944,6 +943,4 @@ class G4SAINT(L.LightningModule):
 if __name__ == "__main__":
 
     g = torch.randn(16, 887)
-    print(selected_indices.shape)
-    g = g[:, selected_indices]
     print(g.shape)
