@@ -4,6 +4,7 @@ This folder contains metadata and dataset splits derived from the **human protei
 
 ## Directory structure
 
+```
 data/
 ├── uniprotkb_binding_vectors.csv
 ├── uniprotkb_ids.txt
@@ -13,6 +14,7 @@ data/
     ├── test.txt
     ├── uniprotkb_index_mapping.json
     └── interproscan_pfam_output.tsv
+```
 
 ---
 
