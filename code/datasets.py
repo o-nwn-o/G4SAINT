@@ -615,7 +615,7 @@ class ProteinDataModule(L.LightningDataModule):
             ], file_path)
             self.train_dataset, self.val_dataset, self.test_dataset = utils.split_dataset_by_uniprot_ids(datasetALL, file_paths)
             if self.balance == 'up':
-                manager = ClusterDataManager(output_dir="/home/wengnan/data/uniprotkb/")
+                manager = ClusterDataManager(output_dir="data/uniprotkb/")
                 positive_ids, _ = manager.get_ids_for_class("RNA_G4_Binding")
                 positive_ids_dict = {"positives": positive_ids}
                 positive_dataset = utils.split_dataset_by_ids(datasetALL, positive_ids_dict)[0]

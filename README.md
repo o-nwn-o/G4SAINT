@@ -10,38 +10,90 @@ This repository provides the code for:
 
 ```bash
 pip install -r requirements.txt
-````
+```
 
 ---
 
-## Data Preparation
+## Training and Evaluation Data
 
-### 1. Protein sequences (FASTA)
+The model is trained and evaluated on the **human protein subset from the January 2025 release of UniProt Knowledgebase (UniProtKB)**.
 
-Prepare FASTA file for proteins.
+Minimal dataset files are provided under:
 
-### 2. InterProScan
+```
+data/
+```
+
+See `data/README.md` for detailed descriptions of each file.
+
+### Preparing structural data
+
+Download AlphaFold PDB structures for proteins listed in:
+
+```
+data/uniprotkb_ids.txt
+```
+
+and place them under:
+
+```
+data/uniprotkb
+```
+
+### Generating the dataset
 
 Run:
+
+```bash
+cd code
+python datasets.py
+```
+
+This step generates graph representations and ESM2-based features required for training and evaluation.
+
+Note: Preprocessed datasets are not included due to size but can be regenerated.
+
+---
+
+## Training
+
+```bash
+cd code
+python train.py
+```
+
+---
+
+## Evaluation
+
+```bash
+cd code
+python test.py
+```
+
+---
+
+## Proteome-wide Screening (Application)
+
+### Required inputs
+
+For applying the model to new proteins, the following inputs are required:
+
+* Protein FASTA
+* InterProScan annotation
+* AlphaFold PDB structures
+
+### InterProScan
 
 ```bash
 interproscan.sh -i input.fasta -f tsv -appl Pfam -o interpro.tsv
 ```
 
-Place output:
+### Run screening
 
-```
-data/TrEMBL/interproscan_pfam_output.tsv
-```
-
----
-
-### 3. Protein structures
-
-Download AlphaFold PDB files and place in:
-
-```
-data/TrEMBL/
+```bash
+cd code
+python filter.py
 ```
 
 ---
@@ -50,12 +102,10 @@ data/TrEMBL/
 
 Pretrained weights are available at:
 
-- G4SAINT model:
-
+* G4SAINT model:
   https://zenodo.org/records/19845817/files/trial0015_d__epoch=22_val_loss=0.132.ckpt?download=1
-  
 
-- SAE model:
+* SAE model:
   https://zenodo.org/records/19845817/files/sae-epoch=02-train_loss=0.40.ckpt?download=1
 
 After downloading, place them under:
@@ -67,38 +117,17 @@ code/model/sae/
 
 ---
 
-## Run Screening
-
-```bash
-cd code
-python filter.py
-```
-
----
-
-## Test
-
-```bash
-cd code
-python test.py
-```
-
----
-
 ## Notes
 
 ### ESM2 Protein Language Model
 
 We use the ESM2 model:
 
-- Model: esm2_t33_650M_UR50D
-- Source: https://github.com/facebookresearch/esm
-- Version: ESM2 (Rives et al., 2021)
+* Model: esm2_t33_650M_UR50D
+* Source: https://github.com/facebookresearch/esm
+* Version: ESM2 (Rives et al., 2021)
 
-The model weights can be automatically downloaded via the ESM package, 
-or manually obtained from the official repository.
-
-If downloaded manually, place the weights under:
+The model weights can be automatically downloaded or manually placed in:
 
 ```
 code/esm2_t33_650M_UR50D/
@@ -110,7 +139,7 @@ code/esm2_t33_650M_UR50D/
 
 We used InterProScan version:
 
-- Version: interproscan-5.75-106.0
+* Version: interproscan-5.75-106.0
 
 Download from:
 
@@ -120,3 +149,6 @@ Example:
 
 ```bash
 interproscan.sh -i input.fasta -f tsv -appl Pfam -o interpro.tsv
+```
+
+Note: Different versions may produce slightly different domain annotations.
