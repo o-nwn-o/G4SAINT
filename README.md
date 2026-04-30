@@ -6,7 +6,16 @@ This repository provides the code for:
 
 ---
 
-## Installation
+## Environment Setup
+
+The code has been tested in the following environment:
+
+- Python: 3.11  
+- PyTorch: 2.5  
+- CUDA (PyTorch): 12.1  
+- OS: Linux  
+
+Install the required dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -37,7 +46,7 @@ data/uniprotkb_ids.txt
 and place them under:
 
 ```
-data/uniprotkb
+data/uniprotkb/
 ```
 
 ### Generating the dataset
@@ -152,3 +161,9 @@ interproscan.sh -i input.fasta -f tsv -appl Pfam -o interpro.tsv
 ```
 
 Note: Different versions may produce slightly different domain annotations.
+
+### Hardware
+
+All experiments were conducted on a machine with:
+
+- GPU: NVIDIA GeForce RTX 4090 (24 GB memory)
