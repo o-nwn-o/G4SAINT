@@ -312,7 +312,7 @@ def plot_feature_tracks(
 
     # ── 3. Build a small dense matrix [k, seq_len] ───────────────────────
     acts = torch.zeros(k, seq_len, dtype=vals_sel.dtype)
-    acts.index_put_((col_ids, rows_sel), vals_sel, accumulate=True)  # 若同位置有多值可累加
+    acts.index_put_((col_ids, rows_sel), vals_sel, accumulate=True)  # accumulate if multiple values at same position
 
     # ── 4. Construct domain mask ───────────────────────────────────
     if target_domains is None:
@@ -413,7 +413,6 @@ if __name__ == "__main__":
     annotator = NodeDomainAnnotator()
     # annotator.save_ids()
     activation_path = "code/sae/test_activations_sparse.pt"
-    # top_feats = cfs_node(activation_path, annotator) # 不使用
 
     domain_file = "data/domain/all.txt"  
     acc_sets = extract_pfam_acc_sets_by_type(domain_file)
