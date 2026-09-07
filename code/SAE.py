@@ -404,7 +404,7 @@ if __name__ == "__main__":
     # model = LitBatchTopKSAE(cfg)
     # trainer.fit(model, train_loader)
 
-    cfg["raw"] = True  # 是否使用原始激活值
+    cfg["raw"] = True  # Whether to use raw activation values
 
     cfg["dasf_ids"] = {
         "KH":    [9079, 6861, 6895, 5300, 9203],

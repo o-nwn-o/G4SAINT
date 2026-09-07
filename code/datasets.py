@@ -208,6 +208,11 @@ class ProteinGraph(InMemoryDataset):
 
         self.prefix = os.path.join(root, self.folder)
         y_value = self.kwargs.get('y', 1)
+        if isinstance(y_value, str):
+            if self.label_path is None:
+                raise ValueError("The value of 'y' as a string requires 'label_path'")
+        elif not isinstance(y_value, (int, float, torch.Tensor)):
+            raise ValueError("The value of 'y' must be a number, a tensor, or a string when label_path is provided")
         self.folder = self.folder + f"_{y_value}"
         print(f"Dataset folder: {self.folder}")
 
@@ -220,10 +225,6 @@ class ProteinGraph(InMemoryDataset):
         if os.path.exists(self.processed_paths[1]):
             with open(self.processed_paths[1], 'r') as f:
                 self.structure_ids = [line.strip() for line in f]
-        if self.update_label:
-            self.process()  # Force process and update labels
-        else:
-            print(f"Dataset {self.folder} initialized successfully.")
     
     @property
     def processed_dir(self) -> str:
@@ -243,11 +244,31 @@ class ProteinGraph(InMemoryDataset):
         return node_types, edge_types
     
     def process(self):
+
         src_dir = self.get_valid_folder()
-        if self.update_label and src_dir and not self.overwrite:
-            self.update_labels(src_dir, dst_dir=self.processed_dir)
-        else:
+
+        # ---------- Case 1 ----------
+        # overwrite
+        if self.overwrite:
+            print("Overwrite dataset...")
             self.__process()
+            return
+
+        # ---------- Case 2 ----------
+        # update label
+        if self.update_label:
+
+            if src_dir is not None:
+                print("Updating labels from cached dataset...")
+                self.update_labels(src_dir, self.processed_dir)
+                return
+
+            print("No cached dataset found. Rebuilding...")
+            self.__process()
+            return
+
+        # ---------- Case 3 ----------
+        self.__process()
 
     def __process(self):
         builder = PDB2Graph(self.pfam_df, self.label_path, **self.kwargs)

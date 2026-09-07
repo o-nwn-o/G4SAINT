@@ -166,14 +166,7 @@ if __name__ == "__main__":
         interpro_output_file="data/uniprotkb/interproscan_pfam_output.tsv",
     )
 
-    # # regenerate data if needed
-    # data_manager.generate_and_save_data(
-    #     "/mnt/disk1/nwn/data/uniprotkb_ids.txt",
-    #     "data/domain.tsv",
-    #     "/mnt/disk1/nwn/data/uniprotkb/interproscan_pfam_output.tsv",
-    #     )
-
-    # # Query InterPro features for a Uniprot ID
+    # Query InterPro features for a Uniprot ID
     uniprot_id = ['P41091', 'Q9UGR2']
     sample_idx = [data_manager.uniprot_to_idx[pid] for pid in uniprot_id]
     inter_features = data_manager.get_interpro_features_by_indices(sample_idx)
