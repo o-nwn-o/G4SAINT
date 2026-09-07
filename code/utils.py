@@ -17,7 +17,7 @@ def get_default_params(alpha_dict=None):
             "all_RNA_Binding": (2.0, 1.0),
             "RNA_G4_Binding": (10.0, 1.0),
             'all_RNA_G4_Binding': (10.0, 1.0),
-            # 其他 task ...
+            # other task ...
         }
     else:
         alpha_dict = None

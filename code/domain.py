@@ -1,3 +1,4 @@
+import os
 import utils
 import torch
 import numpy as np
@@ -10,9 +11,11 @@ from collections import defaultdict
 from scipy.stats import mannwhitneyu
 from torch_scatter import scatter_mean, scatter_sum
 
+os.chdir(os.path.expanduser("~"))
+
 class NodeDomainAnnotator:
     def __init__(self, evalue_threshold=1e-1):
-        annotation_df = "/mnt/disk1/nwn/data/uniprotkb/interproscan_pfam_output.tsv"
+        annotation_df = "data/uniprotkb/interproscan_pfam_output.tsv"
         columns = ['Sequence ID', 'MD5 Checksum', 'Sequence Length', 'Analysis Method',
                     'Accession Number', 'Domain Name', 'Start Position', 'End Position',
                     'E-value', 'Status', 'Date', 'InterPro Entry ID', 'InterPro Entry Description',
@@ -27,18 +30,18 @@ class NodeDomainAnnotator:
         self.scan_df = scan_df
 
     def save_ids(self):
-        # 提取 Uniprot ID 列，去重
+        # Extract and deduplicate Uniprot ID column
         unique_ids = self.scan_df['Uniprot ID'].dropna().unique()
 
-        output_path = "/mnt/disk1/nwn/data/uniprotkb/pfam_ids.txt"
-        # 保存为 txt 文件，每行一个 ID
+        output_path = "data/uniprotkb/pfam_ids.txt"
+        # Save as txt file with one ID per line
         with open(output_path, 'w') as f:
             for uid in unique_ids:
                 f.write(uid + '\n')
 
     def get_coarse_domain_matrix(self, prot_lens: Dict[str, int]) -> torch.Tensor:
         """
-        返回所有蛋白粗粒度的结构域有无标注，[sum(seq_len_list), 1]
+        Return coarse-grained domain annotation for all proteins, shape [sum(seq_len_list), 1]
         """
         masks = []
         for prot_idx, seq_len in prot_lens.items():
@@ -56,7 +59,7 @@ class NodeDomainAnnotator:
 
     def get_specific_domain_matrix(self, prot_lens: Dict[str, int], target_domains: List[str]) -> torch.Tensor:
         """
-        返回指定结构域的节点注释，[sum(seq_len_list), len(target_domains)]
+        Return node annotations for specified domains, shape [sum(seq_len_list), len(target_domains)]
         """
         masks = []
         target_domains_dict = {domain: idx for idx, domain in enumerate(target_domains)}
@@ -85,10 +88,10 @@ def cfs_region(activation_path, annotator, target_domains=None, device="cuda"):
     prot_lens = data["prot_lens"]
 
 
-    nonzero_idx = sparse_acts.indices().T  # [nnz，2]
+    nonzero_idx = sparse_acts.indices().T  # [nnz, 2]
     nonzero_val = sparse_acts.values()
     domain_matrix = annotator.get_coarse_domain_matrix(prot_lens)
-    coarse_mask = domain_matrix.sum(dim=1).bool() 
+    coarse_mask = domain_matrix.sum(dim=1).bool()
     if target_domains is not None:
         specific_matrix = annotator.get_specific_domain_matrix(prot_lens, target_domains)
         specific_mask = specific_matrix.sum(dim=1).bool()
@@ -101,25 +104,25 @@ def cfs_region(activation_path, annotator, target_domains=None, device="cuda"):
 
     del data, domain_matrix
 
-    # 统计每条蛋白的起止位置
+    # compute start and end indices for each protein sequence
     seq_boundaries = []
     cur = 0
     for length in prot_lens.values():
         seq_boundaries.append((cur, cur + length))
         cur += length
 
-    # 收集每条蛋白的结构域片段和非结构域片段
+    # collect domain and non-domain segments for each protein
     region_info = []
     for (start, end) in seq_boundaries:
         domain_seg = domain_mask[start:end].cpu().numpy()
         neg_seg = background_mask[start:end].cpu().numpy()
 
-        # 标注连续结构域区域
+        # label contiguous domain regions
         pos_labeled, n_pos = label(domain_seg)
         neg_labeled, n_neg = label(neg_seg)
 
         pos_regions = [torch.arange(start + (pos_labeled == i).nonzero()[0][0],
-                                    start + (pos_labeled == i).nonzero()[-1][0] + 1) 
+                                    start + (pos_labeled == i).nonzero()[-1][0] + 1)
                        for i in range(1, n_pos+1)]
 
         neg_regions = [torch.arange(start + (neg_labeled == i).nonzero()[0][0],
@@ -130,9 +133,9 @@ def cfs_region(activation_path, annotator, target_domains=None, device="cuda"):
 
     del domain_seg, neg_seg, pos_labeled, neg_labeled, pos_regions, neg_regions
 
-    # 在region_info构建后
-    pos_region_map = []  # 每个 pos region 的 node index
-    neg_region_map = []  # 每个 neg region 的 node index
+    # after building region_info
+    pos_region_map = []  # node indices for each positive region
+    neg_region_map = []  # node indices for each negative region
 
     for pos_regions, neg_regions in region_info:
         pos_region_map.extend(pos_regions)
@@ -145,7 +148,7 @@ def cfs_region(activation_path, annotator, target_domains=None, device="cuda"):
 
     del region_info, pos_region_map, neg_region_map
 
-    # 转为稀疏格式（node-feature 映射）
+    # convert to sparse format (node-feature mapping)
     feat_node_val = defaultdict(list)
     for (node_id, feat_id), val in zip(nonzero_idx.tolist(), nonzero_val.tolist()):
         feat_node_val[feat_id].append((node_id, val))
@@ -179,7 +182,7 @@ def cfs_region(activation_path, annotator, target_domains=None, device="cuda"):
 
         std_all = np.std(np.concatenate([pos_means, neg_means]))
         delta = (np.mean(pos_means) - np.mean(neg_means)) / (std_all + 1e-6)
-        stat, pval = mannwhitneyu(pos_means, neg_means, alternative="greater")
+        _, pval = mannwhitneyu(pos_means, neg_means, alternative="greater")
 
         feature_scores[feat_id] = {
             "delta_mean": delta,
@@ -190,7 +193,7 @@ def cfs_region(activation_path, annotator, target_domains=None, device="cuda"):
             "neg_nonzero_mean": np.mean(neg_nz_mean)
         }
 
-    # 排序与输出
+    # sort and return top features
     significant = {k: v for k, v in feature_scores.items() if v["pval"] < 0.05}
     top_feats = dict(sorted(significant.items(), key=lambda x: -x[1]["delta_mean"])[:50])
     return top_feats
@@ -211,7 +214,7 @@ def cfs_node(activation_path, annotator):
 
     del data, sparse_acts, domain_mask
 
-    # 转为稀疏格式（node-feature 映射）
+    # Convert to sparse format (node-feature mapping)
     feat_node_val = defaultdict(lambda: {'pos': [], 'neg': []})
     for (node_id, feat_id), val in zip(nonzero_idx.tolist(), nonzero_val.tolist()):
         if node_id in domain_nodes:
@@ -230,24 +233,24 @@ def cfs_node(activation_path, annotator):
         pos_vals = torch.tensor(group['pos'], device=device)
         neg_vals = torch.tensor(group['neg'], device=device)
 
-        # density (非零比例)
+        # density (ratio of non-zero values)
         pos_density = (pos_vals > 0).float().mean().item()
         neg_density = (neg_vals > 0).float().mean().item()
 
-        # 非零激活均值
+        # mean of non-zero activations
         pos_nz_vals = pos_vals[pos_vals > 0]
         neg_nz_vals = neg_vals[neg_vals > 0]
         pos_nz_mean = pos_nz_vals.mean().item() if len(pos_nz_vals) > 0 else 0.0
         neg_nz_mean = neg_nz_vals.mean().item() if len(neg_nz_vals) > 0 else 0.0
 
-        # 均值对比
+        # mean comparison
         pos_mean = pos_vals.mean().item()
         neg_mean = neg_vals.mean().item()
         all_vals_np = torch.cat([pos_vals, neg_vals]).detach().cpu().numpy()
         std_all = np.std(all_vals_np)
         delta = (pos_mean - neg_mean) / (std_all + 1e-6)
 
-        # 非参数检验
+        # non-parametric test
         try:
             stat, pval = mannwhitneyu(
                 pos_vals.detach().cpu().numpy(),
@@ -279,9 +282,9 @@ def plot_feature_tracks(
         annotator,
         top_k_feats = [2170, 6857, 1592, 1637, 1428],
         target_domains = None,
-        act_path = "/mnt/disk1/nwn/code/sae/test_activations_raw.pt"):
+        act_path = "code/sae/test_activations_raw.pt"):
 
-    # ── 1. 读取稀疏激活 及 元信息 ─────────────────────────
+    # ── 1. Load sparse activations and metadata ─────────────────────────
     data         = torch.load(act_path, weights_only=True, map_location="cpu")
     sp           = data["sparse_acts"].coalesce()          # sparse COO [N, D]
     prot_lens    = data["prot_lens"]                       # {uid: length}
@@ -291,7 +294,7 @@ def plot_feature_tracks(
     seq_len             = end_idx - start_idx
     k                   = len(top_k_feats)
 
-    # ── 2. 在稀疏索引中筛选「本蛋白 & top‑k 特征列」────────
+    # ── 2. Filter sparse indices for this protein & top-k feature columns ─────────
     rows, cols = sp.indices()
     vals       = sp.values()
 
@@ -303,15 +306,15 @@ def plot_feature_tracks(
     cols_sel = cols[sel_mask]
     vals_sel = vals[sel_mask]
 
-    # col_id → 0…k‑1 映射
+    # map col_id → 0…k-1
     feat2col = {fid: i for i, fid in enumerate(top_k_feats)}
     col_ids  = torch.tensor([feat2col[int(c)] for c in cols_sel], dtype=torch.long)
 
-    # ── 3. 构建小稠密矩阵 [k, seq_len] ───────────────────────
+    # ── 3. Build a small dense matrix [k, seq_len] ───────────────────────
     acts = torch.zeros(k, seq_len, dtype=vals_sel.dtype)
     acts.index_put_((col_ids, rows_sel), vals_sel, accumulate=True)  # 若同位置有多值可累加
 
-    # ── 4. 构造结构域掩码 ───────────────────────────────────
+    # ── 4. Construct domain mask ───────────────────────────────────
     if target_domains is None:
         mask = annotator.get_coarse_domain_matrix({prot_id: seq_len})
     else:
@@ -325,7 +328,7 @@ def plot_feature_tracks(
     )
 
     for i, fid in enumerate(top_k_feats):
-        # 灰色背景
+        # gray background for domain regions
         domain_region = (domain_mask[0] == 1)
         in_region = False
         region_start = 0
@@ -339,14 +342,14 @@ def plot_feature_tracks(
         if in_region:
             axs[i].axvspan(region_start, seq_len, color="lightgray", alpha=0.5, zorder=0)
 
-        # 曲线
+        # plot curve
         axs[i].fill_between(range(seq_len), 0, acts[i], step="mid", color="steelblue")
 
-        # 实际最小值和最大值（保留原值）
+        # actual min and max values (preserve original values)
         ymin = acts[i].min().item()
         ymax = acts[i].max().item()
 
-        # 刻度线
+        # spines/ticks
         axs[i].spines[["top", "right"]].set_visible(False)
 
         ymin_str = f"{ymin:.1e}"
@@ -355,10 +358,10 @@ def plot_feature_tracks(
         axs[i].set_ylim(ymin_str, ymax_str)
         # axs[i].set_yticklabels([ymin_str, ymax_str], fontsize=9)
 
-        # 标签放在数值左边
+        # label placed to the left of the values
         axs[i].set_ylabel(f"f/{fid}", rotation=0, labelpad=35, fontsize=9)
 
-    # 最后一行画结构域
+    # draw domain row on the last axis
     axs[-1].imshow(domain_mask, aspect="auto", cmap="Reds", extent=[0, seq_len, 0, 1])
     axs[-1].set_ylabel("Domain", rotation=0, labelpad=35, fontsize=9)
     axs[-1].set_yticks([])
@@ -401,7 +404,7 @@ def extract_pfam_acc_sets_by_type(domain_txt_path):
 
 def run_family(target_domains):
     annot = NodeDomainAnnotator()
-    activation_path = "/mnt/disk1/nwn/code/sae/test_activations_sparse.pt"
+    activation_path = "code/sae/test_activations_sparse.pt"
     return cfs_region(activation_path, annot, target_domains)
 
 
@@ -409,10 +412,10 @@ if __name__ == "__main__":
     device = utils.get_available_gpu()
     annotator = NodeDomainAnnotator()
     # annotator.save_ids()
-    activation_path = "/mnt/disk1/nwn/code/sae/test_activations_sparse.pt"
+    activation_path = "code/sae/test_activations_sparse.pt"
     # top_feats = cfs_node(activation_path, annotator) # 不使用
 
-    domain_file = "/mnt/disk1/nwn/data/domain/all.txt"  
+    domain_file = "data/domain/all.txt"  
     acc_sets = extract_pfam_acc_sets_by_type(domain_file)
     results = {}
     for category, groups in acc_sets.items():
@@ -425,21 +428,20 @@ if __name__ == "__main__":
         for i, (key, value) in enumerate(top5.items()):
             print(f"{key}: {value}")
         del top_feats
-        torch.cuda.empty_cache()          # 清空未引用张量
-        torch.cuda.ipc_collect()          # 进一步回收显存碎片
+        torch.cuda.empty_cache()          # Clear unreferenced tensors from cache
+        torch.cuda.ipc_collect()          # Further collect GPU memory fragments
 
-    # 展开为表格保存
     df = pd.DataFrame([
         {"category": cat, "feature": k, **v}
         for cat, top5 in results.items()
         for k, v in top5.items()
     ])
-    df.to_csv("/mnt/disk1/nwn/code/sae/feat_ids.csv", index=False)
+    df.to_csv("code/sae/feat_ids.csv", index=False)
 
 '''
     # prot_id = "P57723" # KH domain protein
     prot_id = "P31943" # RRM
-    # prot_id = "P46531"  # 示例蛋白质ID
+    # prot_id = "P46531"  # example protein ID
     plot_feature_tracks(prot_id, annotator,
                         top_k_feats = list(top_feats.keys())[:5],
                         target_domains=target_domains
