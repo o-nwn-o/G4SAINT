@@ -415,7 +415,7 @@ if __name__ == "__main__":
     }  
 
 
-    model = LitBatchTopKSAE.load_from_checkpoint("code/model/sae/sae-epoch=02-train_loss=0.40.ckpt", 
+    model = LitBatchTopKSAE.load_from_checkpoint("code/model/sae/g4saint_sae.ckpt", 
                                                  cfg=cfg, strict=False
                                                  )
     trainer.test(model, train_loader)

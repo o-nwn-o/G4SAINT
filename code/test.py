@@ -20,16 +20,16 @@ datamodeule = ProteinDataModule(task_type='pretrain',
                                 layer_num = 33,
                                 hub_dir = 'code/esm2_t33_650M_UR50D',
                                 )
-datamodeule.setup('train_val_test', act=True)# 'train_val_test''train_test'
+datamodeule.setup('train_val_test', act=True) # 'train_test'
 test_loader = datamodeule.test_dataloader()
 
-tb_logger = TensorBoardLogger("code/tb_logs", name='test', version=0) # pre
+tb_logger = TensorBoardLogger("code/tb_logs", name='test', version=0) 
 
 trainer = L.Trainer(logger=[tb_logger], 
                     max_epochs=70, accelerator=accelerator,
                     )
 
-best_model_path = "code/model/new_train/trial0015_d__epoch=22_val_loss=0.132.ckpt" # g4saint
+best_model_path = "code/model/g4saint/g4saint_predictor.ckpt" # g4saint
 test_model = G4SAINT.load_from_checkpoint(best_model_path, strict=False)
 # test_model.params["save_outputs"] = True
 # test_model.params["save_fig"] = True
