@@ -1,8 +1,20 @@
-# G4SAINT (Anonymous Submission)
+# G4SAINT
 
-This repository provides the code for:
+This repository provides the source code for:
 
 **G4SAINT Enables Interpretable Prediction of RNA G-Quadruplex Binding Proteins across the Human Proteome via Domain-Guided Learning**
+
+## Code and Model Availability
+
+The source code for G4SAINT is publicly available at:
+
+- GitHub: https://github.com/o-nwn-o/G4SAINT
+
+The pretrained G4SAINT and sparse autoencoder (SAE) model weights are permanently archived on Zenodo:
+
+- Zenodo record: https://zenodo.org/records/23555760
+
+The repository provides instructions for obtaining the source datasets and reproducing data preprocessing, model training, evaluation, and proteome-wide screening.
 
 ---
 
@@ -54,8 +66,7 @@ data/uniprotkb/
 Run:
 
 ```bash
-cd code
-python datasets.py
+python code/datasets.py
 ```
 
 This step generates graph representations and ESM2-based features required for training and evaluation.
@@ -67,8 +78,7 @@ Note: Preprocessed datasets are not included due to size but can be regenerated.
 ## Training
 
 ```bash
-cd code
-python train.py
+python code/train.py
 ```
 
 ---
@@ -76,8 +86,7 @@ python train.py
 ## Evaluation
 
 ```bash
-cd code
-python test.py
+python code/test.py
 ```
 
 ---
@@ -101,27 +110,52 @@ interproscan.sh -i input.fasta -f tsv -appl Pfam -o interpro.tsv
 ### Run screening
 
 ```bash
-cd code
-python filter.py
+python code/filter.py
 ```
 
 ---
 
 ## Pretrained Models
 
-Pretrained weights are available at:
+The pretrained model weights used in this study are archived on Zenodo:
 
-* G4SAINT model:
-  https://zenodo.org/records/19845817/files/trial0015_d__epoch=22_val_loss=0.132.ckpt?download=1
+https://doi.org/10.5281/zenodo.23555760
 
-* SAE model:
-  https://zenodo.org/records/19845817/files/sae-epoch=02-train_loss=0.40.ckpt?download=1
+| Model | Zenodo filename | Local destination |
+|---|---|---|
+| G4SAINT prediction model | `g4saint_predictor.ckpt` | `code/model/g4saint/g4saint_predictor.ckpt` |
+| Sparse autoencoder (SAE) | `g4saint_sae.ckpt` | `code/model/sae/g4saint_sae.ckpt` |
 
-After downloading, place them under:
+Create the required directories:
 
+```bash
+mkdir -p code/model/g4saint code/model/sae
 ```
-code/model/new_train/
-code/model/sae/
+
+Download the pretrained G4SAINT model checkpoint:
+
+```bash
+curl -fL \
+  "https://zenodo.org/records/23555760/files/g4saint_predictor.ckpt?download=1" \
+  -o "code/model/g4saint/g4saint_predictor.ckpt"
+```
+
+Download the pretrained SAE model checkpoint:
+
+```bash
+curl -fL \
+  "https://zenodo.org/records/23555760/files/g4saint_sae.ckpt?download=1" \
+  -o "code/model/sae/g4saint_sae.ckpt"
+```
+
+The expected directory structure is:
+
+```bash
+code/model/
+├── g4saint/
+│   └── g4saint_predictor.ckpt
+└── sae/
+    └── g4saint_sae.ckpt
 ```
 
 ---

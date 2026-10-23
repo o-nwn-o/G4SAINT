@@ -179,13 +179,13 @@ if __name__ == "__main__":
     accelerator = 'cpu' if str(device) == 'cpu' else 'gpu'
     torch.set_float32_matmul_precision('high')
     trainer = L.Trainer(max_epochs=10, accelerator=accelerator,)
-    best_model_path = "code/model/new_train/trial0015_d__epoch=22_val_loss=0.132.ckpt"
+    best_model_path = "code/model/g4saint/g4saint_predictor.ckpt"
     test_model = G4SAINTFilter.load_from_checkpoint(best_model_path, strict=False)
     test_model.to(device)
 
     data_params = {
         "interpro_output_file": "data/TrEMBL/interproscan_pfam_output.tsv",
-        "sae_checkpoint": "code/model/sae/sae-epoch=02-train_loss=0.40.ckpt",
+        "sae_checkpoint": "code/model/sae/g4saint_sae.ckpt",
         "dasf_ids": {
             "KH":    [9079, 6861, 6895, 5300, 9203],
             "RRM":   [3017, 7315, 9203, 2575, 3673],
