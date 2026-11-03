@@ -126,6 +126,39 @@ interproscan.sh -i input.fasta -f tsv -appl Pfam -o interpro.tsv
 python code/filter.py
 ```
 
+### Screening output
+
+The screening results are saved to:
+
+```text
+code/filter_outputs.csv
+```
+
+The `id` column contains the protein identifier, and each `logit_<task>` column
+contains the raw model output for the corresponding prediction task. To convert
+a logit $z$ into a probability score $p$, apply the sigmoid function
+independently to each task:
+
+$$
+p = \operatorname{sigmoid}(z) = \frac{1}{1 + e^{-z}}
+$$
+
+For example, all logit columns can be converted as follows:
+
+```python
+from scipy.special import expit
+
+for column in df.columns:
+    if column.startswith("logit_"):
+        probability_column = column.replace("logit_", "prob_", 1)
+        df[probability_column] = expit(df[column])
+```
+
+The task-specific probability scores are independent and do not sum to one
+across tasks; no additional probability calibration is applied. Because sigmoid
+is strictly increasing, ranking proteins by a task-specific logit gives the same
+order as ranking them by its corresponding probability score.
+
 ---
 
 ## Pretrained Models

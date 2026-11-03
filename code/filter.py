@@ -170,7 +170,7 @@ class G4SAINTFilter(G4SAINT):
                 'id': ids,
                 **{f'logit_{task}': logits[:, i] for i, task in enumerate(self.active_task_names)},
             })
-        # df.to_csv("code/filter_outputs.csv", index=False)
+        df.to_csv("code/filter_outputs.csv", index=False)
 
 
 if __name__ == "__main__":
