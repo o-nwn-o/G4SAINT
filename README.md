@@ -27,11 +27,21 @@ The code has been tested in the following environment:
 - CUDA (PyTorch): 12.1  
 - OS: Linux  
 
-Install the required dependencies:
+Create a Python 3.11 environment, then install the tested PyTorch build and the
+matching PyTorch Geometric binary extensions:
 
 ```bash
-pip install -r requirements.txt
+python -m pip install torch==2.5.0 \
+  --index-url https://download.pytorch.org/whl/cu121
+
+python -m pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv \
+  -f https://data.pyg.org/whl/torch-2.5.0+cu121.html
+
+python -m pip install -r requirements.txt
 ```
+
+The separate PyTorch and PyTorch Geometric installation steps ensure that their
+compiled packages match the CUDA version used in the tested environment.
 
 ---
 
@@ -76,6 +86,9 @@ Note: Preprocessed datasets are not included due to size but can be regenerated.
 ---
 
 ## Training
+
+Before training or evaluation, generate `code/sae/activations.pt` as described under
+[Generating RBD-OCC features](#generating-rbd-occ-features).
 
 ```bash
 python code/train.py
@@ -157,6 +170,19 @@ code/model/
 └── sae/
     └── g4saint_sae.ckpt
 ```
+
+### Generating RBD-OCC features
+
+After generating the dataset and downloading the pretrained SAE checkpoint, run:
+
+```bash
+python code/SAE.py
+```
+
+This generates `code/sae/activations.pt` locally. The file stores RBD-OCCs
+(position-specific occurrences of key RNA-binding domains), together with the
+corresponding protein lengths. These SAE-derived features are loaded during
+G4SAINT training and evaluation.
 
 ---
 

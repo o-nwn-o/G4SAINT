@@ -33,15 +33,15 @@ data/
   UniProt IDs for all human proteins in the dataset (January 2025 UniProtKB release).  
   This file defines the full protein universe used in this study.
 
+- **uniprotkb_index_mapping.json**  
+  Mapping between label names and indices used in the model.
+
 ---
 
 ### Subdirectory: uniprotkb/
 
 - **train.txt / valid.txt / test.txt**  
   Predefined dataset splits.
-
-- **uniprotkb_index_mapping.json**  
-  Mapping between label names and indices used in the model.
 
 - **interproscan_pfam_output.tsv**  
   Domain annotations generated using InterProScan (Pfam).
