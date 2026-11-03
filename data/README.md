@@ -6,6 +6,7 @@ This folder contains metadata and dataset splits derived from the **human protei
 
 ```
 data/
+├── domain.tsv
 ├── uniprotkb_binding_vectors.csv
 ├── uniprotkb_ids.txt
 └── uniprotkb/
@@ -21,6 +22,9 @@ data/
 ## File descriptions
 
 ### Top-level files
+
+- **domain.tsv**
+  Mapping between Pfam accessions and integrated InterPro entries used to construct domain features.
 
 - **uniprotkb_binding_vectors.csv**  
   Multi-label annotations for proteins used in training and evaluation.
@@ -48,3 +52,4 @@ data/
 
 - Protein structures (AlphaFold PDB files) are not included and should be downloaded separately.
 - Preprocessed datasets (e.g., ESM2 embeddings and graph representations) are not included due to size and can be generated using `code/datasets.py`.
+- `data/domain.tsv` is required when regenerating InterPro domain features and when running domain-aware proteome-wide screening.
