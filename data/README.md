@@ -9,11 +9,11 @@ data/
 ├── domain.tsv
 ├── uniprotkb_binding_vectors.csv
 ├── uniprotkb_ids.txt
+├── uniprotkb_index_mapping.json
 └── uniprotkb/
     ├── train.txt
     ├── valid.txt
     ├── test.txt
-    ├── uniprotkb_index_mapping.json
     └── interproscan_pfam_output.tsv
 ```
 
